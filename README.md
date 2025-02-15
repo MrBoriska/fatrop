@@ -6,7 +6,7 @@
 # Upcoming release
 
 A new version of FATROP is on its way.  
-The release is currently in the **beta phase** and available for preview in the [`fatropv1`](https://github.com/jgillis/fatrop_demo/tree/fatropv1) branch.  
+The release is currently in the **beta phase** and available for preview in the [`fatropv1`](https://github.com/jgillis/fatrop/tree/fatropv1) branch.  
 
 # FATROP
 Fatrop is a constrained nonlinear optimal control problem solver that is fast and achieves a high numerical robustness.
