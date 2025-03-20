@@ -124,6 +124,8 @@ fatrop_int FatropAlg::optimize()
     bool watch_dog_step = false;
     for (iter_count_ = start_iter_; iter_count_ < maxiter; iter_count_++)
     {
+
+        // printf("1\n");
         fatropdata_->obj_curr = eval_objective_curr();
         // if (fatropdata_->LamLinfCurr() > 1e12)
         // {
@@ -142,6 +144,12 @@ fatrop_int FatropAlg::optimize()
         it_curr.ls = ls;
         it_curr.reg = deltaw;
         it_curr.resto = resto_problem_;
+        
+        if (isnan(it_curr.objective) ||  isnan(it_curr.constraint_violation) || isnan(it_curr.du_inf)) {
+            printer_->level(1) << "WARNING fatrop returned NaN" << endl;
+            return 1;
+        }
+
         if (no_no_full_steps_bc_filter >= 5)
         {
             bool reset_filter = (filter_reseted <= 5);
@@ -178,11 +186,14 @@ fatrop_int FatropAlg::optimize()
         {
             no_acceptable_steps = 0;
         }
+
+        // printf("2\n");
         if (resto_problem_ && resto_stop_crit())
         {
             return 100;
         }
 
+        // printf("3\n");
         if (emu < tol || (no_acceptable_steps >= acceptable_iter) || ((no_conse_small_sd == 2) && (mu <= mu_min)))
         // if (emu < tol)
         {
@@ -212,6 +223,8 @@ fatrop_int FatropAlg::optimize()
             printer_->level(1) << "found solution" << endl;
             return 0;
         }
+
+        // printf("4\n");
         // update mu
         // todo make a seperate class
         while (!watch_dog_step && mu > mu_min && (fatropdata_->e_mu_curr(mu) <= kappa_eta * mu || (no_conse_small_sd == 2)))
@@ -236,6 +249,8 @@ fatrop_int FatropAlg::optimize()
             // the following break statement prohibits 'fast' mu updates, at leat one iteration per mu update
             // break;
         }
+
+        // printf("5\n");
         // Hessian is necessary for calculating search direction
         eval_lag_hess();
         // todo make an update class for regularization
@@ -245,18 +260,24 @@ fatrop_int FatropAlg::optimize()
         fatropdata_->evaluate_barrier_quantities(mu);
         fatrop_int regularity = -1;
         fatrop_int increase_counter = 0;
+
+        // printf("6\n");
         if (!restore_watchdog_step)
         {
             while (regularity != 0)
             {
+                // printf("6.1\n");
                 regularity = solve_pd_sys(deltaw, deltac, mu);
                 if (deltac == 0 && regularity < 0)
                 {
+                    // printf("6.2\n");
                     printer_->level(1) << "degenerate Jacobian" << endl;
                     deltac = deltac_candidate;
                 }
+                // printf("6.3\n");
                 if (regularity > 0) // regularization is necessary
                 {
+                    // printf("6.4\n");
                     if (increase_counter == 0)
                     {
                         deltaw = (delta_w_last == 0.0) ? delta_w0 : MAX(delta_wmin, kappa_wmin * delta_w_last);
@@ -267,10 +288,12 @@ fatrop_int FatropAlg::optimize()
                     }
                     increase_counter++;
                 }
+                // printf("6.5\n");
             }
             if (deltaw > 0.)
                 delta_w_last = deltaw;
         }
+        // printf("7\n");
         fatropdata_->compute_delta_z();
         // cout << "norm dzL " << Linf(fatropdata_->delta_zL) << endl;
         // cout << "norm dzU " << Linf(fatropdata_->delta_zU) << endl;
@@ -289,7 +312,9 @@ fatrop_int FatropAlg::optimize()
                 fatropdata_->zL_curr,
                 fatropdata_->zU_curr);
         }
+        // printf("8\n");
         fatropdata_->relax_bounds_var(mu);
+        // printf("9\n");
         fatropdata_->modify_dual_bounds(mu);
         ls = lsinfo.ls;
         if (watch_dog_step && no_watch_dog_steps_taken == 0)
@@ -324,6 +349,7 @@ fatrop_int FatropAlg::optimize()
             }
         }
 
+        // printf("10\n");
         if (ls == 0)
         {
             // if already in resto phase: solver failed
@@ -373,9 +399,12 @@ fatrop_int FatropAlg::optimize()
         {
             no_conse_small_sd = 0;
         }
+
+        // printf("11\n");
         restore_watchdog_step = false;
         // if linesearch unsuccessful -> resto phase
     }
+    // printf("optimize_end\n");
     journaller_->print_iterations(resto_problem_);
     stats.return_flag = 1;
     return 1;
